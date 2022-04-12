@@ -44,6 +44,27 @@ public class Publisher {
 				params.brokerPort, params.commandFile);
 		if (!sub.isValid) {
 			System.exit(1);
+			return;
+		}
+
+		// create user input handler
+		var callback = sub.new UserInputCallback();
+		new UserInput(callback);
+	}
+
+	/**
+	 * UserInputCallback
+	 */
+	public class UserInputCallback implements UserInput.UserInputCallback {
+
+		@Override
+		public void handleLine(String line) {
+			//TODO handle line
+		}
+
+		@Override
+		public void onClose() {
+			System.exit(1);
 		}
 	}
 }
