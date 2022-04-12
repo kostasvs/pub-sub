@@ -5,6 +5,7 @@ public class Params {
 	public String commandFile;
 	public int myPort;
 	public int brokerPort;
+	public int subscribersPort;
 
 	public Params(String[] args) {
 
@@ -34,6 +35,10 @@ public class Params {
 
 				case "p":
 					brokerPort = Utils.toInt(args[i + 1], brokerPort);
+					break;
+
+				case "s":
+					subscribersPort = Utils.toInt(args[i + 1], subscribersPort);
 					break;
 
 				case "f":
