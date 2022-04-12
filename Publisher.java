@@ -1,4 +1,4 @@
-public class Subscriber {
+public class Publisher {
 
 	protected boolean isValid = false;
 	protected String id;
@@ -7,7 +7,7 @@ public class Subscriber {
 	protected int myPort;
 	protected int brokerPort;
 
-	public Subscriber(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
+	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
 		if (id == null || id.trim().isEmpty()) {
 			Utils.logError("id not provided or invalid");
@@ -39,8 +39,8 @@ public class Subscriber {
 		// init parameters
 		var params = new Params(args);
 
-		// create subscriber
-		var sub = new Subscriber(params.id, params.myPort, params.brokerIp,
+		// create Publisher
+		var sub = new Publisher(params.id, params.myPort, params.brokerIp,
 				params.brokerPort, params.commandFile);
 		if (!sub.isValid) {
 			System.exit(1);
