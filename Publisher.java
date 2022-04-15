@@ -30,7 +30,9 @@ public class Publisher {
 		this.myPort = myPort;
 		this.brokerIp = brokerIp.trim();
 		this.brokerPort = brokerPort;
-		this.commandFile = commandFile.trim();
+		if (commandFile != null && !commandFile.isBlank()) {
+			this.commandFile = commandFile.trim();
+		}
 		isValid = true;
 	}
 
@@ -40,15 +42,15 @@ public class Publisher {
 		var params = new Params(args);
 
 		// create Publisher
-		var sub = new Publisher(params.id, params.myPort, params.brokerIp,
+		var pub = new Publisher(params.id, params.myPort, params.brokerIp,
 				params.brokerPort, params.commandFile);
-		if (!sub.isValid) {
+			if (!pub.isValid) {
 			System.exit(1);
 			return;
 		}
 
 		// create user input handler
-		var callback = sub.new UserInputCallback();
+		var callback = pub.new UserInputCallback();
 		new UserInput(callback);
 	}
 
@@ -64,7 +66,7 @@ public class Publisher {
 
 		@Override
 		public void onClose() {
-			System.exit(1);
+			System.exit(0);
 		}
 	}
 }

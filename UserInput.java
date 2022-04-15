@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public class UserInput {
+public class UserInput extends Thread {
 
 	public boolean hasExited = false;
 	protected UserInputCallback callback;
@@ -12,10 +12,10 @@ public class UserInput {
 			return;
 		}
 		this.callback = callback;
-		run();
 	}
 
-	protected void run() {
+	@Override
+	public void run() {
 
 		try (var scanner = new Scanner(System.in)) {
 
@@ -25,7 +25,7 @@ public class UserInput {
 				String line = null;
 				try {
 					line = scanner.nextLine().trim();
-					if (line.toLowerCase().equals("exit")) {
+					if (line.equalsIgnoreCase("exit")) {
 						hasExited = true;
 					} else {
 						callback.handleLine(line);

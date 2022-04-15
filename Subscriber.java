@@ -7,6 +7,8 @@ public class Subscriber {
 	protected int myPort;
 	protected int brokerPort;
 
+	protected ClientWrapper client;
+
 	public Subscriber(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
 		if (id == null || id.trim().isEmpty()) {
@@ -30,8 +32,14 @@ public class Subscriber {
 		this.myPort = myPort;
 		this.brokerIp = brokerIp.trim();
 		this.brokerPort = brokerPort;
-		this.commandFile = commandFile.trim();
+		if (commandFile != null && !commandFile.isBlank()) {
+			this.commandFile = commandFile.trim();
+		}
 		isValid = true;
+
+		// connect to broker
+		client = new ClientWrapper(brokerIp, brokerPort, new BrokerHandler());
+		client.start();
 	}
 
 	public static void main(String[] args) {
@@ -49,7 +57,7 @@ public class Subscriber {
 
 		// create user input handler
 		var callback = sub.new UserInputCallback();
-		new UserInput(callback);
+		new UserInput(callback).start();
 	}
 
 	/**
@@ -59,12 +67,39 @@ public class Subscriber {
 
 		@Override
 		public void handleLine(String line) {
-			//TODO handle line
+			if (client != null) {
+				client.sendLine(line);
+			}
 		}
 
 		@Override
 		public void onClose() {
-			System.exit(1);
+			System.exit(0);
 		}
+	}
+
+	/**
+	 * BrokerHandler
+	 */
+	public class BrokerHandler implements ClientWrapper.SocketHandler {
+
+		@Override
+		public void handleConnected() {
+			Utils.log("Connected to broker");
+		}
+
+		@Override
+		public void handleReceivedLine(String line) {
+			Utils.log("Received line: " + line);
+		}
+
+		@Override
+		public void handleDisconnected() {
+			Utils.log("Disconnected from broker");
+		}
+	}
+
+	public ClientWrapper getClient() {
+		return client;
 	}
 }
