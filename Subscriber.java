@@ -1,13 +1,13 @@
 public class Subscriber {
 
-	protected boolean isValid = false;
-	protected String id;
-	protected String brokerIp;
-	protected String commandFile = "";
-	protected int myPort;
-	protected int brokerPort;
+	private boolean isValid = false;
+	private String id;
+	private String brokerIp;
+	private String commandFile = "";
+	private int myPort;
+	private int brokerPort;
 
-	protected ClientWrapper client;
+	private ClientWrapper client;
 
 	public Subscriber(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -38,7 +38,7 @@ public class Subscriber {
 		isValid = true;
 
 		// connect to broker
-		client = new ClientWrapper(brokerIp, brokerPort, new BrokerHandler());
+		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
 		client.start();
 	}
 
@@ -48,8 +48,8 @@ public class Subscriber {
 		var params = new Params(args);
 
 		// create subscriber
-		var sub = new Subscriber(params.id, params.myPort, params.brokerIp,
-				params.brokerPort, params.commandFile);
+		var sub = new Subscriber(params.getId(), params.getMyPort(), params.getBrokerIp(),
+				params.getBrokerPort(), params.getCommandFile());
 		if (!sub.isValid) {
 			System.exit(1);
 			return;

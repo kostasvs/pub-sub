@@ -1,11 +1,11 @@
 public class Publisher {
 
-	protected boolean isValid = false;
-	protected String id;
-	protected String brokerIp;
-	protected String commandFile = "";
-	protected int myPort;
-	protected int brokerPort;
+	private boolean isValid = false;
+	private String id;
+	private String brokerIp;
+	private String commandFile = "";
+	private int myPort;
+	private int brokerPort;
 
 	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -42,9 +42,9 @@ public class Publisher {
 		var params = new Params(args);
 
 		// create Publisher
-		var pub = new Publisher(params.id, params.myPort, params.brokerIp,
-				params.brokerPort, params.commandFile);
-			if (!pub.isValid) {
+		var pub = new Publisher(params.getId(), params.getMyPort(), params.getBrokerIp(),
+				params.getBrokerPort(), params.getCommandFile());
+		if (!pub.isValid) {
 			System.exit(1);
 			return;
 		}
@@ -61,7 +61,7 @@ public class Publisher {
 
 		@Override
 		public void handleLine(String line) {
-			//TODO handle line
+			// TODO handle line
 		}
 
 		@Override

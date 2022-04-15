@@ -2,8 +2,8 @@ import java.util.Scanner;
 
 public class UserInput extends Thread {
 
-	public boolean hasExited = false;
-	protected UserInputCallback callback;
+	private boolean exited = false;
+	private UserInputCallback callback;
 
 	public UserInput(UserInputCallback callback) {
 
@@ -26,24 +26,24 @@ public class UserInput extends Thread {
 				try {
 					line = scanner.nextLine().trim();
 					if (line.equalsIgnoreCase("exit")) {
-						hasExited = true;
+						exited = true;
 					} else {
 						callback.handleLine(line);
 					}
 				} catch (Exception e) {
 					Utils.logError(e.toString());
-					hasExited = true;
+					exited = true;
 				}
 
 				// exit condition
-				if (line == null || hasExited) {
+				if (line == null || exited) {
 					break;
 				}
 			}
 		}
 
 		callback.onClose();
-		hasExited = true;
+		exited = true;
 	}
 
 	/**
@@ -54,5 +54,9 @@ public class UserInput extends Thread {
 		public void handleLine(String line);
 
 		public void onClose();
+	}
+
+	public boolean hasExited() {
+		return exited;
 	}
 }

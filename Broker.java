@@ -2,11 +2,11 @@ import java.net.Socket;
 
 public class Broker {
 
-	protected boolean isValid = false;
-	protected int publishersPort;
-	protected int subscribersPort;
+	private boolean isValid = false;
+	private int publishersPort;
+	private int subscribersPort;
 
-	protected ServerWrapper serverWrapper;
+	private ServerWrapper serverWrapper;
 
 	public Broker(int publishersPort, int subscribersPort) {
 
@@ -33,9 +33,9 @@ public class Broker {
 		var params = new Params(args);
 
 		// create Broker
-		Utils.log("Broker with publishers port " + params.brokerPort +
-				" and subscribers port " + params.subscribersPort);
-		var broker = new Broker(params.brokerPort, params.subscribersPort);
+		Utils.log("Broker with publishers port " + params.getBrokerPort() +
+				" and subscribers port " + params.getSubscribersPort());
+		var broker = new Broker(params.getBrokerPort(), params.getSubscribersPort());
 		if (!broker.isValid) {
 			System.exit(1);
 		}

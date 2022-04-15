@@ -8,10 +8,10 @@ import java.util.Set;
 
 public class ServerWrapper extends Thread {
 
-	protected final int port;
-	protected final SocketHandler handler;
+	private final int port;
+	private final SocketHandler handler;
 
-	protected final Map<Socket, DataOutputStream> socketOutputs = new HashMap<>();
+	private final Map<Socket, DataOutputStream> socketOutputs = new HashMap<>();
 
 	public ServerWrapper(int port, SocketHandler handler) {
 		this.port = port;

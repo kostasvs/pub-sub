@@ -5,9 +5,9 @@ import java.net.Socket;
 
 public class ServerClientHandler extends Thread {
 
-	protected Socket socket;
-	protected ServerWrapper.SocketHandler handler;
-	protected ServerWrapper parentServer;
+	private Socket socket;
+	private ServerWrapper.SocketHandler handler;
+	private ServerWrapper parentServer;
 
 	public ServerClientHandler(Socket socket, ServerWrapper.SocketHandler handler, ServerWrapper parentServer) {
 		this.socket = socket;

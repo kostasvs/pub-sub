@@ -1,29 +1,37 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class ClientWrapper extends Thread {
 
-	protected final String ip;
-	protected final int port;
-	protected final SocketHandler handler;
+	private final String ip;
+	private final int port;
+	private final int localPort;
+	private final SocketHandler handler;
 
-	protected Socket socket;
-	protected DataOutputStream outputStream;
+	private DataOutputStream outputStream;
 
 	public ClientWrapper(String ip, int port, ClientWrapper.SocketHandler handler) {
 		this.ip = ip;
 		this.port = port;
 		this.handler = handler;
+		this.localPort = 0;
+	}
+
+	public ClientWrapper(String ip, int port, ClientWrapper.SocketHandler handler, int localPort) {
+		this.ip = ip;
+		this.port = port;
+		this.handler = handler;
+		this.localPort = localPort;
 	}
 
 	@Override
 	public void run() {
 
-		try (var s = new Socket(ip, port)) {
+		try (var socket = new Socket(ip, port, InetAddress.getLocalHost(), localPort)) {
 
-			socket = s;
-			outputStream = new DataOutputStream(s.getOutputStream());
+			outputStream = new DataOutputStream(socket.getOutputStream());
 			handler.handleConnected();
 
 			handleInputFromServer(socket);
