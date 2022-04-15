@@ -29,7 +29,7 @@ public class ClientWrapper extends Thread {
 	@Override
 	public void run() {
 
-		try (var socket = new Socket(ip, port, InetAddress.getLocalHost(), localPort)) {
+		try (var socket = new Socket(ip, port, null, localPort)) {
 
 			outputStream = new DataOutputStream(socket.getOutputStream());
 			handler.handleConnected();
