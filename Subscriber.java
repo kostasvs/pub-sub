@@ -1,5 +1,9 @@
 public class Subscriber {
 
+	public static final String CMD_ID = "subid";
+	public static final String CMD_SUB = "sub";
+	public static final String CMD_UNSUB = "unsub";
+
 	private boolean isValid = false;
 	private String id;
 	private String brokerIp;
@@ -67,8 +71,31 @@ public class Subscriber {
 
 		@Override
 		public void handleLine(String line) {
-			if (client != null) {
-				client.sendLine(line);
+
+			if (client == null || line == null || line.isBlank()) {
+				return;
+			}
+
+			String[] parts = Utils.splitCommandPayload(line);
+			String cmd = parts[0];
+			String payload = parts[1];
+
+			switch (cmd) {
+				case CMD_SUB:
+				case CMD_UNSUB:
+					// subscribe/unsubscribe to topic
+					var topic = payload;
+					if (!Utils.isValidTopic(topic)) {
+						Utils.logWarn("invalid topic naming");
+						break;
+					}
+					client.sendLine(id + " " + cmd + " " + topic);
+					break;
+
+				default:
+					Utils.logWarn("unrecognized command in user input: " + line);
+					// client.sendLine(line);
+					break;
 			}
 		}
 
@@ -86,10 +113,17 @@ public class Subscriber {
 		@Override
 		public void handleConnected() {
 			Utils.log("Connected to broker");
+			client.sendLine(id + " " + CMD_ID);
 		}
 
 		@Override
 		public void handleReceivedLine(String line) {
+
+			if (line.equals(Broker.REPLY_OK)) {
+				Utils.printLine(line);
+				return;
+			}
+
 			Utils.log("Received line: " + line);
 		}
 

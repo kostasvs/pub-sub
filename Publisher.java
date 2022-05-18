@@ -1,11 +1,16 @@
 public class Publisher {
 
+	public static final String CMD_ID = "pubid";
+	public static final String CMD_PUB = "pub";
+
 	private boolean isValid = false;
 	private String id;
 	private String brokerIp;
 	private String commandFile = "";
 	private int myPort;
 	private int brokerPort;
+
+	private ClientWrapper client;
 
 	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -34,6 +39,10 @@ public class Publisher {
 			this.commandFile = commandFile.trim();
 		}
 		isValid = true;
+
+		// connect to broker
+		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
+		client.start();
 	}
 
 	public static void main(String[] args) {
@@ -68,5 +77,31 @@ public class Publisher {
 		public void onClose() {
 			System.exit(0);
 		}
+	}
+
+	/**
+	 * BrokerHandler
+	 */
+	public class BrokerHandler implements ClientWrapper.SocketHandler {
+
+		@Override
+		public void handleConnected() {
+			Utils.log("Connected to broker");
+			client.sendLine(id + " " + CMD_ID);
+		}
+
+		@Override
+		public void handleReceivedLine(String line) {
+			Utils.log("Received line: " + line);
+		}
+
+		@Override
+		public void handleDisconnected() {
+			Utils.log("Disconnected from broker");
+		}
+	}
+
+	public ClientWrapper getClient() {
+		return client;
 	}
 }
