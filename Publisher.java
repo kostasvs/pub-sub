@@ -60,7 +60,7 @@ public class Publisher {
 
 		// create user input handler
 		var callback = pub.new UserInputCallback();
-		new UserInput(callback);
+		new UserInput(callback).start();
 	}
 
 	/**
@@ -70,7 +70,33 @@ public class Publisher {
 
 		@Override
 		public void handleLine(String line) {
-			// TODO handle line
+
+			if (client == null || line == null || line.isBlank()) {
+				return;
+			}
+
+			String[] parts = Utils.splitCommandPayload(line);
+			String cmd = parts[0];
+			String payload = parts[1];
+
+			// currently only pub command is used
+			if (!CMD_PUB.equals(cmd)) {
+				Utils.logWarn("unrecognized command in user input: " + line);
+				return;
+			}
+
+			// publish message to topic
+			parts = Utils.splitTopicMessage(payload);
+			String topic = parts[0];
+			String msg = parts[1];
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming");
+				return;
+			}
+			if (msg.isEmpty()) {
+				Utils.logWarn("publishing empty message");
+			}
+			client.sendLine(id + " " + cmd + " " + topic + " " + msg);
 		}
 
 		@Override
@@ -92,12 +118,19 @@ public class Publisher {
 
 		@Override
 		public void handleReceivedLine(String line) {
+
+			if (line.equals(Broker.REPLY_OK)) {
+				Utils.printLine(line);
+				return;
+			}
+			
 			Utils.log("Received line: " + line);
 		}
 
 		@Override
 		public void handleDisconnected() {
 			Utils.log("Disconnected from broker");
+			System.exit(0);
 		}
 	}
 

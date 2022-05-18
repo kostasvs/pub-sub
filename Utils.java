@@ -46,6 +46,12 @@ public class Utils {
 		return parts;
 	}
 
+	public static String[] splitTopicMessage(String input) {
+
+		// currently has identical implementation with splitCommandPayload, so use that instead
+		return splitCommandPayload(input);
+	}
+
 	public static void printLine(String str) {
 		System.out.println(str == null ? "null" : str);
 	}

@@ -94,7 +94,6 @@ public class Subscriber {
 
 				default:
 					Utils.logWarn("unrecognized command in user input: " + line);
-					// client.sendLine(line);
 					break;
 			}
 		}
@@ -124,12 +123,31 @@ public class Subscriber {
 				return;
 			}
 
+			String[] parts = Utils.splitCommandPayload(line);
+			if (Publisher.CMD_PUB.equals(parts[0])) {
+				handleTopicMessage(parts[1]);
+				return;
+			}
+
 			Utils.log("Received line: " + line);
 		}
 
 		@Override
 		public void handleDisconnected() {
 			Utils.log("Disconnected from broker");
+			System.exit(0);
+		}
+
+		private void handleTopicMessage(String input) {
+
+			String[] parts = Utils.splitTopicMessage(input);
+			
+			if (!Utils.isValidTopic(parts[0])) {
+				Utils.logWarn("received msg with invalid topic");
+				return;
+			}
+
+			Utils.printLine("Received msg for topic " + parts[0] + ": " + parts[1]);
 		}
 	}
 

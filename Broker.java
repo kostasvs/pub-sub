@@ -94,9 +94,6 @@ public class Broker {
 			String cmd = parts[1];
 			String payload = parts[2];
 
-			String topic;
-			HashSet<String> topicList;
-
 			// check given id
 			if (fromId.isEmpty()) {
 				Utils.logWarn("blank id sent by " + socket);
@@ -119,38 +116,30 @@ public class Broker {
 
 				case Subscriber.CMD_SUB:
 					// Subscriber topic sub
-					topic = payload;
-					if (!Utils.isValidTopic(topic)) {
-						Utils.logWarn("invalid topic naming sent by subscriber " + socket + ": " + topic);
-						serverWrapper.sendLine(socket, REPLY_BAD_TOPIC);
-						break;
+					if (subToTopic(payload, fromId, socket)) {
+
+						Utils.log(fromId + " subbed to topic " + payload);
+						serverWrapper.sendLine(socket, REPLY_OK);
 					}
-
-					// register to topic
-					topicList = subIdsPerTopic.computeIfAbsent(topic, k -> new HashSet<>());
-					topicList.add(fromId);
-
-					Utils.log(fromId + " subbed to topic " + topic);
-					serverWrapper.sendLine(socket, REPLY_OK);
 					break;
 
 				case Subscriber.CMD_UNSUB:
 					// Subscriber topic unsub
-					topic = payload;
-					if (!Utils.isValidTopic(topic)) {
-						Utils.logWarn("invalid topic naming sent by subscriber " + socket + ": " + topic);
-						serverWrapper.sendLine(socket, REPLY_BAD_TOPIC);
-						break;
-					}
+					if (unsubFromTopic(payload, fromId, socket)) {
 
-					// unregister from topic
-					topicList = subIdsPerTopic.get(topic);
-					if (topicList != null) {
-						topicList.remove(fromId);
+						Utils.log(fromId + " unsubbed from topic " + payload);
+						serverWrapper.sendLine(socket, REPLY_OK);
 					}
+					break;
 
-					Utils.log(fromId + " unsubbed from topic " + topic);
-					serverWrapper.sendLine(socket, REPLY_OK);
+				case Publisher.CMD_PUB:
+					// Publish message in topic
+					parts = Utils.splitTopicMessage(payload);
+					if (publishMessage(parts[0], parts[1], socket)) {
+
+						Utils.log(fromId + " published message \"" + parts[1] + "\" in topic " + parts[0]);
+						serverWrapper.sendLine(socket, REPLY_OK);
+					}
 					break;
 
 				default:
@@ -176,9 +165,82 @@ public class Broker {
 			}
 		}
 
-		private boolean isValidIdForCommand (String cmd, String fromId, Socket socket) {
+		/**
+		 * Subscribe the subscriber with given id and socket to the given topic.
+		 * 
+		 * @param topic
+		 * @param fromId
+		 * @param socket
+		 * @return whether successful (even if the subscriber was already subbed to that
+		 *         topic)
+		 */
+		private boolean subToTopic(String topic, String fromId, Socket socket) {
 
-			if (Subscriber.CMD_ID.equals(cmd)) {
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming sent by subscriber " + socket + ": " + topic);
+				serverWrapper.sendLine(socket, REPLY_BAD_TOPIC);
+				return false;
+			}
+
+			var topicSubIds = subIdsPerTopic.computeIfAbsent(topic, k -> new HashSet<>());
+			topicSubIds.add(fromId);
+			return true;
+		}
+
+		/**
+		 * Unsubscribe the subscriber with given id and socket from the given topic.
+		 * 
+		 * @param topic
+		 * @param fromId
+		 * @param socket
+		 * @return whether successful (even if the subscriber was not subbed to that
+		 *         topic)
+		 */
+		private boolean unsubFromTopic(String topic, String fromId, Socket socket) {
+
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming sent by subscriber " + socket + ": " + topic);
+				serverWrapper.sendLine(socket, REPLY_BAD_TOPIC);
+				return false;
+			}
+
+			var topicSubIds = subIdsPerTopic.get(topic);
+			if (topicSubIds != null) {
+				topicSubIds.remove(fromId);
+			}
+			return true;
+		}
+
+		/**
+		 * Publish given message, received from given socket, in given topic.
+		 * 
+		 * @param topic
+		 * @param msg
+		 * @param socket
+		 * @return whether successful
+		 */
+		private boolean publishMessage(String topic, String msg, Socket socket) {
+
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming sent by publisher " + socket + ": " + topic);
+				serverWrapper.sendLine(socket, REPLY_BAD_TOPIC);
+				return false;
+			}
+
+			var topicSubIds = subIdsPerTopic.get(topic);
+			if (topicSubIds != null) {
+				var compositeMsg = Publisher.CMD_PUB + " " + topic + " " + msg;
+				for (var sub : subscriberIds.entrySet()) {
+					if (!topicSubIds.contains(sub.getValue())) continue;
+					serverWrapper.sendLine(sub.getKey(), compositeMsg);
+				}
+			}
+			return true;
+		}
+
+		private boolean isValidIdForCommand(String cmd, String fromId, Socket socket) {
+
+			if (Subscriber.CMD_ID.equals(cmd) || Publisher.CMD_ID.equals(cmd)) {
 				return true;
 			}
 
@@ -190,7 +252,8 @@ public class Broker {
 				return false;
 			}
 			if (!regId.equals(fromId)) {
-				Utils.logWarn("inconsistent id " + fromId + " given by " + (isPubCmd ? "pub" : "sub") + " with id " + regId);
+				Utils.logWarn(
+						"inconsistent id " + fromId + " given by " + (isPubCmd ? "pub" : "sub") + " with id " + regId);
 				return false;
 			}
 			return true;

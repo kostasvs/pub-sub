@@ -29,3 +29,6 @@ broker: classes
 	
 sub: classes
 	@java Subscriber -i s1 -r 8000 -h 127.0.0.1 -p 9000
+
+pub: classes
+	@java Publisher -i p1 -r 8200 -h 127.0.0.1 -p 9000
