@@ -1,7 +1,17 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
+
 public class Publisher {
 
 	public static final String CMD_ID = "pubid";
 	public static final String CMD_PUB = "pub";
+
+	private static final List<String> repliesToAdvanceQueue = Arrays.asList(
+		Broker.REPLY_OK,
+		Broker.REPLY_BLANK_ID,
+		Broker.REPLY_BAD_TOPIC
+	);
 
 	private boolean isValid = false;
 	private String id;
@@ -11,6 +21,9 @@ public class Publisher {
 	private int brokerPort;
 
 	private ClientWrapper client;
+
+	private String pubAwaitingReply;
+	private List<String> pendingPubs = new ArrayList<>();
 
 	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -85,23 +98,43 @@ public class Publisher {
 				return;
 			}
 
-			// publish message to topic
-			parts = Utils.splitTopicMessage(payload);
-			String topic = parts[0];
-			String msg = parts[1];
-			if (!Utils.isValidTopic(topic)) {
-				Utils.logWarn("invalid topic naming");
-				return;
-			}
-			if (msg.isEmpty()) {
-				Utils.logWarn("publishing empty message");
-			}
-			client.sendLine(id + " " + cmd + " " + topic + " " + msg);
+			sendPublish(payload, true);
 		}
 
 		@Override
 		public void onClose() {
 			System.exit(0);
+		}
+	}
+
+	/**
+	 * Send a command to the broker to publish the given topic-message packet.
+	 * 
+	 * @param payload topic-message string (separated by space, topic should be
+	 *                single keyword)
+	 * @param queued  whether to respect queue of previous publishes pending
+	 *                completion
+	 */
+	private void sendPublish(String payload, boolean queued) {
+
+		String[] parts = Utils.splitTopicMessage(payload);
+		String topic = parts[0];
+		String msg = parts[1];
+		if (!Utils.isValidTopic(topic)) {
+			Utils.logWarn("invalid topic naming");
+			return;
+		}
+		if (msg.isEmpty()) {
+			Utils.logWarn("publishing empty message");
+		}
+
+		String topicMsg = topic + " " + msg;
+		if (!queued || pubAwaitingReply == null) {
+			pendingPubs.remove(topicMsg);
+			pubAwaitingReply = topicMsg;
+			client.sendLine(id + " " + CMD_PUB + " " + topicMsg);
+		} else {
+			pendingPubs.add(topicMsg);
 		}
 	}
 
@@ -119,11 +152,12 @@ public class Publisher {
 		@Override
 		public void handleReceivedLine(String line) {
 
-			if (line.equals(Broker.REPLY_OK)) {
-				Utils.printLine(line);
+			if (repliesToAdvanceQueue.contains(line)) {
+
+				handleQueueAdvanceReply(line);
 				return;
 			}
-			
+
 			Utils.log("Received line: " + line);
 		}
 
@@ -131,6 +165,23 @@ public class Publisher {
 		public void handleDisconnected() {
 			Utils.log("Disconnected from broker");
 			System.exit(0);
+		}
+
+		private void handleQueueAdvanceReply(String line) {
+
+			if (line.equals(Broker.REPLY_OK)) {
+				if (pubAwaitingReply != null) {
+					String[] parts = Utils.splitTopicMessage(pubAwaitingReply);
+					Utils.printLine("Published msg for topic " + parts[0] + ": " + parts[1]);
+				}
+			} else {
+				Utils.printLine(line);
+			}
+
+			pubAwaitingReply = null;
+			if (!pendingPubs.isEmpty()) {
+				sendPublish(pendingPubs.get(0), true);
+			}
 		}
 	}
 
