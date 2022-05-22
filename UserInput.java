@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class UserInput extends Thread {
@@ -32,8 +33,7 @@ public class UserInput extends Thread {
 					line = scanner.nextLine();
 					injectLine(line);
 
-				} catch (Exception e) {
-					Utils.logError(e.toString());
+				} catch (NoSuchElementException | IllegalStateException e) {
 					exited = true;
 				}
 

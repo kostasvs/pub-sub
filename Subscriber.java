@@ -96,7 +96,8 @@ public class Subscriber {
 					return !sent;
 
 				default:
-					Utils.logWarn("unrecognized command in user input: " + line);
+					Utils.logWarn("Unrecognized command: " + line);
+					Utils.logWarn("Allowed subscriber commands are: sub #topic, unsub #topic, exit");
 					break;
 			}
 			return true;

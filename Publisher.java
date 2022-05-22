@@ -89,7 +89,8 @@ public class Publisher {
 
 			// currently only pub command is used
 			if (!CMD_PUB.equals(cmd)) {
-				Utils.logWarn("unrecognized command in user input: " + line);
+				Utils.logWarn("Unrecognized command: " + line);
+				Utils.logWarn("Allowed publisher commands are: pub #topic message, exit");
 				return true;
 			}
 
