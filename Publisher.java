@@ -8,10 +8,9 @@ public class Publisher {
 	public static final String CMD_PUB = "pub";
 
 	private static final List<String> repliesToAdvanceQueue = Arrays.asList(
-		Broker.REPLY_OK,
-		Broker.REPLY_BLANK_ID,
-		Broker.REPLY_BAD_TOPIC
-	);
+			Broker.REPLY_OK,
+			Broker.REPLY_BLANK_ID,
+			Broker.REPLY_BAD_TOPIC);
 
 	private boolean isValid = false;
 	private String id;
@@ -27,7 +26,7 @@ public class Publisher {
 
 	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
-		if (id == null || id.trim().isEmpty()) {
+		if (id == null || id.isBlank()) {
 			Utils.logError("id not provided or invalid");
 			return;
 		}
@@ -35,7 +34,7 @@ public class Publisher {
 			Utils.logError("port not provided or invalid");
 			return;
 		}
-		if (brokerIp == null || brokerIp.trim().isEmpty()) {
+		if (brokerIp == null || brokerIp.isBlank()) {
 			Utils.logError("broker IP address not provided or invalid");
 			return;
 		}
@@ -74,6 +73,11 @@ public class Publisher {
 		// create user input handler
 		var callback = pub.new UserInputCallback();
 		new UserInput(callback).start();
+
+		// create command file handler
+		if (!params.getCommandFile().isEmpty()) {
+			new CommandFileHandler(params.getCommandFile(), callback).start();
+		}
 	}
 
 	/**

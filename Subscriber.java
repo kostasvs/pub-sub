@@ -15,7 +15,7 @@ public class Subscriber {
 
 	public Subscriber(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
-		if (id == null || id.trim().isEmpty()) {
+		if (id == null || id.isBlank()) {
 			Utils.logError("id not provided or invalid");
 			return;
 		}
@@ -23,7 +23,7 @@ public class Subscriber {
 			Utils.log("port not provided, using auto-assigned port");
 			myPort = 0;
 		}
-		if (brokerIp == null || brokerIp.trim().isEmpty()) {
+		if (brokerIp == null || brokerIp.isBlank()) {
 			Utils.logError("broker IP address not provided or invalid");
 			return;
 		}
@@ -62,6 +62,11 @@ public class Subscriber {
 		// create user input handler
 		var callback = sub.new UserInputCallback();
 		new UserInput(callback).start();
+
+		// create command file handler
+		if (!params.getCommandFile().isEmpty()) {
+			new CommandFileHandler(params.getCommandFile(), callback).start();
+		}
 	}
 
 	/**
@@ -141,7 +146,7 @@ public class Subscriber {
 		private void handleTopicMessage(String input) {
 
 			String[] parts = Utils.splitTopicMessage(input);
-			
+
 			if (!Utils.isValidTopic(parts[0])) {
 				Utils.logWarn("received msg with invalid topic");
 				return;
