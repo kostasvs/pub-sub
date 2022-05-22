@@ -45,6 +45,10 @@ public class Params {
 					commandFile = args[i + 1];
 					break;
 
+				case "loglevel":
+					Utils.setLogLevel(args[i + 1]);
+					break;
+
 				default:
 					break;
 			}

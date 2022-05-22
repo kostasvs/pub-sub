@@ -1,5 +1,26 @@
+import java.util.Arrays;
+import java.util.List;
+
 public class Utils {
+
+	private static int logLevel = 1;
+	private static final List<String> logLevelNames = Arrays.asList("info", "warn", "error", "none");
+
 	private Utils() {
+	}
+
+	public static void setLogLevel(String levelName) {
+
+		if (levelName == null) {
+			return;
+		}
+
+		int newLevel = logLevelNames.indexOf(levelName.toLowerCase());
+		if (newLevel == -1) {
+			printLine("Invalid log level specified, must be one of the following: " + String.join(", ", logLevelNames));
+			return;
+		}
+		logLevel = newLevel;
 	}
 
 	public static int toInt(String str, int defVal) {
@@ -19,8 +40,7 @@ public class Utils {
 			if (sepPos != -1) {
 				parts[0] = input.substring(0, sepPos).trim();
 				parts[1] = input.substring(sepPos + 1).trim();
-			}
-			else {
+			} else {
 				parts[0] = input;
 			}
 		}
@@ -38,8 +58,7 @@ public class Utils {
 				var commandPayload = splitCommandPayload(input.substring(sepPos + 1));
 				parts[1] = commandPayload[0];
 				parts[2] = commandPayload[1];
-			}
-			else {
+			} else {
 				parts[0] = input;
 			}
 		}
@@ -48,7 +67,8 @@ public class Utils {
 
 	public static String[] splitTopicMessage(String input) {
 
-		// currently has identical implementation with splitCommandPayload, so use that instead
+		// currently has identical implementation with splitCommandPayload, so use that
+		// instead
 		return splitCommandPayload(input);
 	}
 
@@ -57,14 +77,26 @@ public class Utils {
 	}
 
 	public static void log(String str) {
-		System.out.println("[log] " + (str == null ? "null" : str));
+
+		if (logLevel > 0) {
+			return;
+		}
+		System.out.println("[info] " + (str == null ? "null" : str));
 	}
 
 	public static void logWarn(String str) {
+
+		if (logLevel > 1) {
+			return;
+		}
 		System.out.println("[warn] " + (str == null ? "null" : str));
 	}
 
 	public static void logError(String str) {
+
+		if (logLevel > 2) {
+			return;
+		}
 		System.err.println("[error] " + (str == null ? "null" : str));
 	}
 
