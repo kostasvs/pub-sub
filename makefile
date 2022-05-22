@@ -32,3 +32,9 @@ sub: classes
 
 pub: classes
 	@java Publisher -i p1 -r 8200 -h 127.0.0.1 -p 9000
+	
+sub2: classes
+	@java Subscriber -i s2 -r 8001 -h 127.0.0.1 -p 9000
+
+pub2: classes
+	@java Publisher -i p2 -r 8201 -h 127.0.0.1 -p 9000
