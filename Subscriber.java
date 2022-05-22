@@ -12,6 +12,7 @@ public class Subscriber {
 	private int brokerPort;
 
 	private ClientWrapper client;
+	private UserInput userInput;
 
 	public Subscriber(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -44,6 +45,16 @@ public class Subscriber {
 		// connect to broker
 		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
 		client.start();
+
+		// create user input handler
+		var callback = new UserInputCallback();
+		userInput = new UserInput(callback);
+		userInput.start();
+
+		// create command file handler
+		if (!this.commandFile.isEmpty()) {
+			new CommandFileHandler(this.commandFile, userInput).start();
+		}
 	}
 
 	public static void main(String[] args) {
@@ -56,16 +67,6 @@ public class Subscriber {
 				params.getBrokerPort(), params.getCommandFile());
 		if (!sub.isValid) {
 			System.exit(1);
-			return;
-		}
-
-		// create user input handler
-		var callback = sub.new UserInputCallback();
-		new UserInput(callback).start();
-
-		// create command file handler
-		if (!params.getCommandFile().isEmpty()) {
-			new CommandFileHandler(params.getCommandFile(), callback).start();
 		}
 	}
 
@@ -75,10 +76,10 @@ public class Subscriber {
 	public class UserInputCallback implements UserInput.UserInputCallback {
 
 		@Override
-		public void handleLine(String line) {
+		public boolean handleLine(String line) {
 
 			if (client == null || line == null || line.isBlank()) {
-				return;
+				return true;
 			}
 
 			String[] parts = Utils.splitCommandPayload(line);
@@ -89,23 +90,31 @@ public class Subscriber {
 				case CMD_SUB:
 				case CMD_UNSUB:
 					// subscribe/unsubscribe to topic
-					var topic = payload;
-					if (!Utils.isValidTopic(topic)) {
-						Utils.logWarn("invalid topic naming");
-						break;
-					}
-					client.sendLine(id + " " + cmd + " " + topic);
-					break;
+					boolean sent = sendCommand(cmd, payload);
+
+					// if sent successfully, return true to block further commands until OK received
+					return !sent;
 
 				default:
 					Utils.logWarn("unrecognized command in user input: " + line);
 					break;
 			}
+			return true;
 		}
 
 		@Override
 		public void onClose() {
 			System.exit(0);
+		}
+
+		private boolean sendCommand(String cmd, String topic) {
+
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming");
+				return false;
+			}
+			client.sendLine(id + " " + cmd + " " + topic);
+			return true;
 		}
 	}
 
@@ -123,8 +132,9 @@ public class Subscriber {
 		@Override
 		public void handleReceivedLine(String line) {
 
-			if (line.equals(Broker.REPLY_OK)) {
+			if (Broker.repliesToAdvanceQueue.contains(line)) {
 				Utils.printLine(line);
+				userInput.advanceQueue();
 				return;
 			}
 

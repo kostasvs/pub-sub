@@ -1,16 +1,7 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Arrays;
-
 public class Publisher {
 
 	public static final String CMD_ID = "pubid";
 	public static final String CMD_PUB = "pub";
-
-	private static final List<String> repliesToAdvanceQueue = Arrays.asList(
-			Broker.REPLY_OK,
-			Broker.REPLY_BLANK_ID,
-			Broker.REPLY_BAD_TOPIC);
 
 	private boolean isValid = false;
 	private String id;
@@ -20,9 +11,9 @@ public class Publisher {
 	private int brokerPort;
 
 	private ClientWrapper client;
+	private UserInput userInput;
 
-	private String pubAwaitingReply;
-	private List<String> pendingPubs = new ArrayList<>();
+	private String pubAwaitingReply = null;
 
 	public Publisher(String id, int myPort, String brokerIp, int brokerPort, String commandFile) {
 
@@ -55,6 +46,16 @@ public class Publisher {
 		// connect to broker
 		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
 		client.start();
+
+		// create user input handler
+		var callback = new UserInputCallback();
+		userInput = new UserInput(callback);
+		userInput.start();
+
+		// create command file handler
+		if (!this.commandFile.isEmpty()) {
+			new CommandFileHandler(this.commandFile, userInput).start();
+		}
 	}
 
 	public static void main(String[] args) {
@@ -67,16 +68,6 @@ public class Publisher {
 				params.getBrokerPort(), params.getCommandFile());
 		if (!pub.isValid) {
 			System.exit(1);
-			return;
-		}
-
-		// create user input handler
-		var callback = pub.new UserInputCallback();
-		new UserInput(callback).start();
-
-		// create command file handler
-		if (!params.getCommandFile().isEmpty()) {
-			new CommandFileHandler(params.getCommandFile(), callback).start();
 		}
 	}
 
@@ -86,10 +77,10 @@ public class Publisher {
 	public class UserInputCallback implements UserInput.UserInputCallback {
 
 		@Override
-		public void handleLine(String line) {
+		public boolean handleLine(String line) {
 
 			if (client == null || line == null || line.isBlank()) {
-				return;
+				return true;
 			}
 
 			String[] parts = Utils.splitCommandPayload(line);
@@ -99,46 +90,38 @@ public class Publisher {
 			// currently only pub command is used
 			if (!CMD_PUB.equals(cmd)) {
 				Utils.logWarn("unrecognized command in user input: " + line);
-				return;
+				return true;
 			}
 
-			sendPublish(payload, true);
+			boolean sent = sendPublish(payload);
+
+			// if sent successfully, return true to block further commands until OK received
+			return !sent;
 		}
 
 		@Override
 		public void onClose() {
 			System.exit(0);
 		}
-	}
 
-	/**
-	 * Send a command to the broker to publish the given topic-message packet.
-	 * 
-	 * @param payload topic-message string (separated by space, topic should be
-	 *                single keyword)
-	 * @param queued  whether to respect queue of previous publishes pending
-	 *                completion
-	 */
-	private void sendPublish(String payload, boolean queued) {
+		private boolean sendPublish(String payload) {
 
-		String[] parts = Utils.splitTopicMessage(payload);
-		String topic = parts[0];
-		String msg = parts[1];
-		if (!Utils.isValidTopic(topic)) {
-			Utils.logWarn("invalid topic naming");
-			return;
-		}
-		if (msg.isEmpty()) {
-			Utils.logWarn("publishing empty message");
-		}
+			String[] parts = Utils.splitTopicMessage(payload);
+			String topic = parts[0];
+			String msg = parts[1];
+			if (!Utils.isValidTopic(topic)) {
+				Utils.logWarn("invalid topic naming");
+				return false;
+			}
+			if (msg.isEmpty()) {
+				Utils.logWarn("publishing empty message");
+			}
 
-		String topicMsg = topic + " " + msg;
-		if (!queued || pubAwaitingReply == null) {
-			pendingPubs.remove(topicMsg);
+			String topicMsg = topic + " " + msg;
 			pubAwaitingReply = topicMsg;
 			client.sendLine(id + " " + CMD_PUB + " " + topicMsg);
-		} else {
-			pendingPubs.add(topicMsg);
+
+			return true;
 		}
 	}
 
@@ -156,7 +139,7 @@ public class Publisher {
 		@Override
 		public void handleReceivedLine(String line) {
 
-			if (repliesToAdvanceQueue.contains(line)) {
+			if (Broker.repliesToAdvanceQueue.contains(line)) {
 
 				handleQueueAdvanceReply(line);
 				return;
@@ -183,9 +166,7 @@ public class Publisher {
 			}
 
 			pubAwaitingReply = null;
-			if (!pendingPubs.isEmpty()) {
-				sendPublish(pendingPubs.get(0), true);
-			}
+			userInput.advanceQueue();
 		}
 	}
 

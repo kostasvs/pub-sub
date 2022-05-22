@@ -8,13 +8,13 @@ public class CommandFileHandler extends Thread {
 
 	private boolean exited = false;
 	private boolean isValid = false;
-	private UserInput.UserInputCallback callback = null;
+	private UserInput userInput = null;
 	private final List<CommandInfo> commands = new ArrayList<>();
 
-	public CommandFileHandler(String filename, UserInput.UserInputCallback callback) {
+	public CommandFileHandler(String filename, UserInput userInput) {
 
-		if (callback == null) {
-			Utils.logError("null UserInputCallback passed in constructor");
+		if (userInput == null) {
+			Utils.logError("null UserInput passed in constructor");
 			return;
 		}
 		if (filename == null || filename.isBlank()) {
@@ -43,8 +43,8 @@ public class CommandFileHandler extends Thread {
 			return;
 		}
 
-		Utils.log(commands.size() + "commands loaded from file");
-		this.callback = callback;
+		Utils.log(commands.size() + " commands loaded from file");
+		this.userInput = userInput;
 		isValid = true;
 	}
 
@@ -70,7 +70,7 @@ public class CommandFileHandler extends Thread {
 			}
 
 			Utils.log("Command file: Executing command: " + commandInfo.command);
-			callback.handleLine(commandInfo.command);
+			userInput.injectLine(commandInfo.command);
 		}
 
 		exited = true;

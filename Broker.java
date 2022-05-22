@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 public class Broker {
 
@@ -11,11 +12,17 @@ public class Broker {
 	public static final String REPLY_BLANK_ID = "ID CANNOT BE BLANK";
 	public static final String REPLY_BAD_TOPIC = "BAD TOPIC NAME";
 
+	public static final List<String> repliesToAdvanceQueue = Arrays.asList(
+			REPLY_OK,
+			REPLY_BLANK_ID,
+			REPLY_BAD_TOPIC);
+
 	private boolean isValid = false;
 	private int publishersPort;
 	private int subscribersPort;
 
 	private ServerWrapper serverWrapper;
+	private UserInput userInput;
 
 	private Map<Socket, String> subscriberIds = new HashMap<>();
 	private Map<Socket, String> publisherIds = new HashMap<>();
@@ -38,6 +45,11 @@ public class Broker {
 
 		serverWrapper = new ServerWrapper(subscribersPort, new SubscriberHandler());
 		serverWrapper.start();
+
+		// create user input handler
+		var callback = new UserInputCallback();
+		userInput = new UserInput(callback);
+		userInput.start();
 	}
 
 	public static void main(String[] args) {
@@ -52,10 +64,6 @@ public class Broker {
 		if (!broker.isValid) {
 			System.exit(1);
 		}
-
-		// create user input handler
-		var callback = broker.new UserInputCallback();
-		new UserInput(callback).start();
 	}
 
 	/**
@@ -64,10 +72,8 @@ public class Broker {
 	public class UserInputCallback implements UserInput.UserInputCallback {
 
 		@Override
-		public void handleLine(String line) {
-			for (var socket : serverWrapper.getClientSockets()) {
-				serverWrapper.sendLine(socket, line);
-			}
+		public boolean handleLine(String line) {
+			return true;
 		}
 
 		@Override
@@ -231,7 +237,9 @@ public class Broker {
 			if (topicSubIds != null) {
 				var compositeMsg = Publisher.CMD_PUB + " " + topic + " " + msg;
 				for (var sub : subscriberIds.entrySet()) {
-					if (!topicSubIds.contains(sub.getValue())) continue;
+					if (!topicSubIds.contains(sub.getValue())) {
+						continue;
+					}
 					serverWrapper.sendLine(sub.getKey(), compositeMsg);
 				}
 			}
