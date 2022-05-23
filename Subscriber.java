@@ -45,16 +45,6 @@ public class Subscriber {
 		// connect to broker
 		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
 		client.start();
-
-		// create user input handler
-		var callback = new UserInputCallback();
-		userInput = new UserInput(callback);
-		userInput.start();
-
-		// create command file handler
-		if (!this.commandFile.isEmpty()) {
-			new CommandFileHandler(this.commandFile, userInput).start();
-		}
 	}
 
 	public static void main(String[] args) {
@@ -79,6 +69,10 @@ public class Subscriber {
 		public boolean handleLine(String line) {
 
 			if (client == null || line == null || line.isBlank()) {
+				return true;
+			}
+			if (!client.isConnected()) {
+				Utils.logWarn("Client not currently connected to server");
 				return true;
 			}
 
@@ -128,6 +122,16 @@ public class Subscriber {
 		public void handleConnected() {
 			Utils.log("Connected to broker");
 			client.sendLine(id + " " + CMD_ID);
+
+			// create user input handler
+			var callback = new UserInputCallback();
+			userInput = new UserInput(callback);
+			userInput.start();
+
+			// create command file handler
+			if (!commandFile.isEmpty()) {
+				new CommandFileHandler(commandFile, userInput).start();
+			}
 		}
 
 		@Override

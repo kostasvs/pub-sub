@@ -11,6 +11,7 @@ public class ClientWrapper extends Thread {
 	private final SocketHandler handler;
 
 	private DataOutputStream outputStream;
+	private boolean connected = false;
 
 	public ClientWrapper(String ip, int port, ClientWrapper.SocketHandler handler) {
 		this.ip = ip;
@@ -32,10 +33,12 @@ public class ClientWrapper extends Thread {
 		try (var socket = new Socket(ip, port, null, localPort)) {
 
 			outputStream = new DataOutputStream(socket.getOutputStream());
+			connected = true;
 			handler.handleConnected();
 
 			handleInputFromServer(socket);
 
+			connected = false;
 			handler.handleDisconnected();
 
 		} catch (Exception e) {
@@ -77,5 +80,9 @@ public class ClientWrapper extends Thread {
 		void handleReceivedLine(String line);
 
 		void handleDisconnected();
+	}
+
+	public boolean isConnected() {
+		return connected;
 	}
 }
