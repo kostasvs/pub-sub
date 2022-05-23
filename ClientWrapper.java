@@ -42,7 +42,7 @@ public class ClientWrapper extends Thread {
 			handler.handleDisconnected();
 
 		} catch (Exception e) {
-			Utils.logError("Could not connect to " + ip + ":" + port);
+			handler.handleConnectError();
 		}
 	}
 
@@ -80,6 +80,8 @@ public class ClientWrapper extends Thread {
 		void handleReceivedLine(String line);
 
 		void handleDisconnected();
+
+		void handleConnectError();
 	}
 
 	public boolean isConnected() {

@@ -159,6 +159,12 @@ public class Publisher {
 			System.exit(0);
 		}
 
+		@Override
+		public void handleConnectError() {
+			Utils.logError("Could not connect to " + brokerIp + ":" + brokerPort);
+			System.exit(0);
+		}
+
 		private void handleQueueAdvanceReply(String line) {
 
 			if (line.equals(Broker.REPLY_OK)) {

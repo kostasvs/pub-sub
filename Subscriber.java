@@ -158,6 +158,12 @@ public class Subscriber {
 			System.exit(0);
 		}
 
+		@Override
+		public void handleConnectError() {
+			Utils.logError("Could not connect to " + brokerIp + ":" + brokerPort);
+			System.exit(0);
+		}
+
 		private void handleTopicMessage(String input) {
 
 			String[] parts = Utils.splitTopicMessage(input);
