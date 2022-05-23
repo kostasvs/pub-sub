@@ -45,6 +45,11 @@ public class Subscriber {
 		// connect to broker
 		client = new ClientWrapper(this.brokerIp, this.brokerPort, new BrokerHandler(), this.myPort);
 		client.start();
+
+		// create user input handler
+		var callback = new UserInputCallback();
+		userInput = new UserInput(callback);
+		userInput.start();
 	}
 
 	public static void main(String[] args) {
@@ -122,11 +127,6 @@ public class Subscriber {
 		public void handleConnected() {
 			Utils.log("Connected to broker");
 			client.sendLine(id + " " + CMD_ID);
-
-			// create user input handler
-			var callback = new UserInputCallback();
-			userInput = new UserInput(callback);
-			userInput.start();
 
 			// create command file handler
 			if (!commandFile.isEmpty()) {
