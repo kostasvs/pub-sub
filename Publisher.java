@@ -22,8 +22,8 @@ public class Publisher {
 			return;
 		}
 		if (!Utils.isValidPort(myPort)) {
-			Utils.logError("port not provided or invalid");
-			return;
+			Utils.log("port not provided, using auto-assigned port");
+			myPort = 0;
 		}
 		if (brokerIp == null || brokerIp.isBlank()) {
 			Utils.logError("broker IP address not provided or invalid");
