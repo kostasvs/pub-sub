@@ -10,11 +10,13 @@ public class Broker {
 	public static final String REPLY_OK = "OK";
 	public static final String REPLY_BLANK_ID = "ID CANNOT BE BLANK";
 	public static final String REPLY_BAD_TOPIC = "BAD TOPIC NAME";
+	public static final String REPLY_NOT_REGISTERED = "CLIENT ID NOT REGISTERED";
 
 	public static final List<String> repliesToAdvanceQueue = Arrays.asList(
 			REPLY_OK,
 			REPLY_BLANK_ID,
-			REPLY_BAD_TOPIC);
+			REPLY_BAD_TOPIC,
+			REPLY_NOT_REGISTERED);
 
 	private boolean isValid = false;
 	private int publishersPort;
@@ -106,6 +108,7 @@ public class Broker {
 				return;
 			}
 			if (!isValidIdForCommand(cmd, fromId, socket)) {
+				serverWrapper.sendLine(socket, REPLY_NOT_REGISTERED);
 				return;
 			}
 
